@@ -1,0 +1,25 @@
+{
+  "name": "beat-the-box",
+  "version": "1.0.0",
+  "description": "HTTP API Server to serve requests from BTB apps",
+  "main": "index.js",
+  "scripts": {
+    "dev": "node --env-file=.env --watch src/server.js",
+    "start": "node src/server.js"
+  },
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "cloudinary": "^2.7.0",
+    "cors": "^2.8.5",
+    "dotenv": "^17.2.1",
+    "express": "^5.1.0",
+    "helmet": "^8.1.0",
+    "knex": "^3.1.0",
+    "morgan": "^1.10.1",
+    "multer": "^2.0.2",
+    "pg": "^8.16.3",
+    "streamifier": "^0.1.1",
+    "validator": "^13.15.15"
+  }
+}
