@@ -25,7 +25,7 @@ export default {
     client: "pg",
     connection: process.env.PROD_DATABASE_URL,
     pool: { min: 2, max: 20 },
-    migrations: { directory: "./migrations" },
+    migrations: { directory: "./migrations", schemaName: "btb_app" },
     seeds: { directory: "./seeds" },
   },
 };
