@@ -1,13 +1,13 @@
 // routes/mediaRouter.js
 import express from "express";
-import { verifyApiKey } from "../middlewares/auth.js";
-import { validateMedia } from "../middlewares/validateMedia.js";
-import { upload } from "../utils/multer.js";
-import * as mediaService from "../services/media.js";
+import { authMiddleware } from "../../middlewares/auth.js";
+import { validateMedia } from "../../middlewares/validateMedia.js";
+import { upload } from "../../utils/multer.js";
+import * as mediaService from "../../services/media.js";
 
 const router = express.Router();
 
-router.get("/", verifyApiKey, async (req, res, next) => {
+router.get("/", authMiddleware, async (req, res, next) => {
   try {
     const media = await mediaService.getAllMedia();
     res.json({ success: true, error: "", data: media });
@@ -18,7 +18,7 @@ router.get("/", verifyApiKey, async (req, res, next) => {
 
 router.post(
   "/",
-  verifyApiKey,
+  authMiddleware,
   upload.single("media_data"),
   validateMedia,
   async (req, res, next) => {
@@ -33,7 +33,7 @@ router.post(
 
 router.put(
   "/:id",
-  verifyApiKey,
+  authMiddleware,
   upload.single("media_data"),
   validateMedia,
   async (req, res, next) => {
@@ -49,7 +49,7 @@ router.put(
   }
 );
 
-router.delete("/:id", verifyApiKey, async (req, res, next) => {
+router.delete("/:id", authMiddleware, async (req, res, next) => {
   try {
     const id = req.params.id;
     if (!id) return res.status(400).json({ error: "id is required" });

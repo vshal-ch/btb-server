@@ -1,14 +1,14 @@
 import { Router } from "express";
-import * as phoneService from "../services/phone.js";
+import * as phoneService from "../../services/phone.js";
 import {
   validateCreatePhone,
   validateUpdatePhone,
-} from "../middlewares/validatePhone.js";
-import { verifyApiKey } from "../middlewares/auth.js";
+} from "../../middlewares/validatePhone.js";
+import { authMiddleware } from "../../middlewares/auth.js";
 
 const router = Router();
 
-router.get("/", verifyApiKey, async (req, res, next) => {
+router.get("/", authMiddleware, async (req, res, next) => {
   try {
     const { contact_id } = req.query;
     if (!contact_id)
@@ -21,7 +21,7 @@ router.get("/", verifyApiKey, async (req, res, next) => {
   }
 });
 
-router.post("/:contact_id", verifyApiKey, validateUpdatePhone, async (req, res, next) => {
+router.post("/:contact_id", authMiddleware, validateUpdatePhone, async (req, res, next) => {
   try {
      const contact_id = req.params.contact_id
       if (!contact_id) {
@@ -38,7 +38,7 @@ router.post("/:contact_id", verifyApiKey, validateUpdatePhone, async (req, res, 
 
 router.put(
   "/:id",
-  verifyApiKey,
+  authMiddleware,
   validateUpdatePhone,
   async (req, res, next) => {
     try {
@@ -54,7 +54,7 @@ router.put(
   }
 );
 
-router.delete("/:id", verifyApiKey, async (req, res, next) => {
+router.delete("/:id", authMiddleware, async (req, res, next) => {
   try {
     const deleted = await phoneService.deletePhone(req.params.id);
     if (!deleted)

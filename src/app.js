@@ -1,4 +1,5 @@
 import express from "express";
+import cookieParser from "cookie-parser";
 import helmet from "helmet";
 import cors from "cors";
 import morgan from "morgan";
@@ -13,9 +14,26 @@ const __dirname = path.dirname(__filename);
 const app = express();
 
 app.use(helmet());
-app.use(cors());
+app.use(
+  cors({
+    origin:
+      process.env.NODE_ENV !== "production"
+        ? process.env.DEV_ADMIN_SITE_ORIGIN
+        : process.env.PROD_ADMIN_SITE_ORIGIN,
+    credentials: true,
+    methods: ["GET", "POST", "PUT", "DELETE"],
+    allowedHeaders: [
+      "Content-Type",
+      "Authorization",
+      "Cache-Control",
+      "Pragma",
+      "Expires",
+    ],
+  })
+);
 app.use(morgan("dev"));
 app.use(express.json({ limit: "1mb" }));
+app.use(cookieParser());
 app.use(express.urlencoded({ extended: true }));
 
 app.get("/privacy-policy", (req, res) => {

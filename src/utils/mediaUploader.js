@@ -16,11 +16,9 @@ cloudinary.config({
  */
 export async function uploadToExternalServer(file, type) {
   return new Promise((resolve, reject) => {
-    const resourceType = type === "video" ? "video" : "image";
-
     const uploadStream = cloudinary.uploader.upload_stream(
       {
-        resource_type: type,
+        resource_type: "image",
         folder: "btb_media", // optional folder in Cloudinary
       },
       (error, result) => {
@@ -39,6 +37,17 @@ export async function uploadToExternalServer(file, type) {
  * @param {String} srcUrl - Cloudinary secure_url
  */
 export async function deleteFromExternalServer(srcUrl, type) {
+  if (
+    !srcUrl ||
+    srcUrl.includes("youtube.com") ||
+    srcUrl.includes("youtu.be")
+  ) {
+    return true;
+  }
+
+  if (!srcUrl.includes("res.cloudinary.com")) {
+    return true;
+  }
   try {
     // Example srcUrl: https://res.cloudinary.com/demo/image/upload/v1234567890/venue_media/abcd1234.png
     const parts = srcUrl.split("/");

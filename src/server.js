@@ -1,10 +1,7 @@
 import app from "./app.js";
-import dotenv from "dotenv";
+import env_vars from "./config/env.js";
 import db from "./config/db.js";
 
-dotenv.config();
-
-const PORT = process.env.PORT || 4000;
 
 async function start() {
   try {
@@ -15,8 +12,8 @@ async function start() {
     console.error("❌ Failed to connect to Postgres:", e.message);
   }
 
-  app.listen(PORT,"0.0.0.0", () => {
-    console.log(`🚀 Server listening on http://localhost:${PORT}`);
+  app.listen(env_vars.port, "0.0.0.0", () => {
+    console.log(`🚀 Server listening on http://localhost:${env_vars.port}`);
   });
 }
 
