@@ -8,7 +8,15 @@ export const getVenueData = async () => {
   const media = await db("media")
     .select("id", "type", "src_url", "description")
     .orderBy("position", "asc");
-  const costs = await db("costs").select("*");
+  const costs = await db("costs")
+    .join("sports", "costs.sport_id", "sports.id")
+    .select(
+      "costs.id",
+      "costs.evening_cost",
+      "costs.weekend_cost",
+      "costs.cost",
+      "sports.name as sport"
+    );
 
   return { ...venue, media, costs };
 };
@@ -31,7 +39,14 @@ export async function updateVenue(data) {
   const [updated] = await db("venue")
     .where({ id })
     .update(updateData)
-    .returning(["name", "timings", "gmaps_url", "address", "dimensions", "is_open"]);
+    .returning([
+      "name",
+      "timings",
+      "gmaps_url",
+      "address",
+      "dimensions",
+      "is_open",
+    ]);
 
   return updated;
 }

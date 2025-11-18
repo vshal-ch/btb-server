@@ -17,8 +17,15 @@ const router = Router();
 
 router.post("/", authMiddleware, validateNewSlot, async (req, res, next) => {
   try {
-    const { start_time, end_time, note, blocked, date } = req.slotData;
-    const slot = await createSlot({ start_time, end_time, note, blocked, date });
+    const { start_time, end_time, note, blocked, date, sport } = req.slotData;
+    const slot = await createSlot({
+      start_time,
+      end_time,
+      note,
+      blocked,
+      date,
+      sport,
+    });
     res.status(201).json({ success: true, error: "", data: slot });
   } catch (err) {
     next(err);
@@ -73,13 +80,14 @@ router.get("/all", authMiddleware, async (req, res, next) => {
       all: all === "true",
       only_blocked: only_blocked === undefined ? null : only_blocked === "true",
       current_time: Number(current_time),
-      date: date
+      date: date,
     });
 
-    const slots = await query
+    const slots = await query;
 
     res.json({ success: true, error: "", data: slots });
   } catch (err) {
+    err.message = "Invalid query!";
     next(err);
   }
 });

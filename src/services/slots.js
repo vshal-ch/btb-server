@@ -6,11 +6,18 @@ export async function getSlots(currentTime, date) {
     .where("date", date)
     .where("blocked", true)
     .andWhere("end_time", ">", currentTime)
-    .select("id","start_time","end_time","date")
+    .select("id", "start_time", "end_time", "date", "sport")
     .orderBy("start_time", "asc");
 }
 
-export async function createSlot({ start_time, end_time, note, blocked, date }) {
+export async function createSlot({
+  start_time,
+  end_time,
+  note,
+  blocked,
+  date,
+  sport,
+}) {
   const existing = await db("booked_slots")
     .where({ start_time, end_time, date })
     .first();
@@ -33,6 +40,7 @@ export async function createSlot({ start_time, end_time, note, blocked, date }) 
       note,
       blocked: blocked,
       date: date, // yyyy-mm-dd
+      sport: sport,
     })
     .returning("*");
 
@@ -42,11 +50,16 @@ export async function createSlot({ start_time, end_time, note, blocked, date }) 
 export async function updateSlot(id, slotData, existing) {
   const changes = {};
 
-  ["start_time", "end_time", "note", "blocked", "date"].forEach((field) => {
-    if (slotData[field] !== undefined && slotData[field] !== existing[field]) {
-      changes[field] = slotData[field];
+  ["start_time", "end_time", "note", "blocked", "date", "sport"].forEach(
+    (field) => {
+      if (
+        slotData[field] !== undefined &&
+        slotData[field] !== existing[field]
+      ) {
+        changes[field] = slotData[field];
+      }
     }
-  });
+  );
 
   if (Object.keys(changes).length === 0) return existing;
 
@@ -67,11 +80,15 @@ export async function deleteSlot(id) {
 }
 
 export function getAllSlots({ all, only_blocked, current_time, date }) {
-  let query = db("booked_slots").select("*").orderBy("date", "desc").orderBy("start_time","desc");
+  let query = db("booked_slots")
+    .select("*")
+    .orderBy("date", "desc")
+    .orderBy("start_time", "desc");
 
   if (!all) {
-    query = query.where("end_time", ">", current_time)
-	.andWhere("date", ">=", date);
+    query = query
+      .where("end_time", ">", current_time)
+      .andWhere("date", ">=", date);
   }
 
   if (only_blocked === true) {

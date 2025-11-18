@@ -11,20 +11,22 @@ export function validateIdParam(req, res, next) {
 
 // Cost validation
 export function validateCost(req, res, next) {
-  const { timings, cost } = req.body;
-
-  if (!timings || typeof timings !== "string") {
-    return next(createError(400, "timings is required and must be a string"));
+  const { evening_cost, weekend_cost, sport_id, cost } = req.body;
+  
+  if (!sport_id || typeof sport_id !== "string") {
+    return next(createError(400, "sport_id is required and must be a string"));
   }
 
   if (cost === undefined || isNaN(Number(cost))) {
     return next(createError(400, "cost is required and must be a number"));
   }
 
-  // Basic SQL injection prevention
-  const forbidden = /(;|--|\/\*|\*\/)/;
-  if (forbidden.test(timings)) {
-    return next(createError(400, "Invalid characters in timings"));
+  if (weekend_cost && isNaN(Number(weekend_cost))) {
+    return next(createError(400, "Weekend cost must be numeric"));
+  }
+
+  if (evening_cost && isNaN(Number(evening_cost))) {
+    return next(createError(400, "Evening cost must be numeric"));
   }
 
   next();

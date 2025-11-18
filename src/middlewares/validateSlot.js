@@ -1,5 +1,6 @@
 import db from "../config/db.js";
 import validator from "validator";
+import createError from "http-errors";
 
 // helper
 function validateTimes(start_time, end_time) {
@@ -58,7 +59,7 @@ export async function validateGet(req, res, next) {
 // Middleware for POST /slot
 export async function validateNewSlot(req, res, next) {
   try {
-    let { start_time, end_time, note, blocked, date } = req.body;
+    let { start_time, end_time, note, blocked, date, sport_id } = req.body;
 
     if (!isValidDateString(date)) {
       return res
@@ -72,6 +73,17 @@ export async function validateNewSlot(req, res, next) {
         data: {},
         error: "Invalid start_time or end_time",
       });
+    }
+
+    if (!sport_id || typeof sport_id !== "string") {
+      return next(
+        createError(400, "sport_id is required and must be a string")
+      );
+    }
+
+    const sport = await db("sports").select("name").where("id", sport_id);
+    if (sport.length == 0) {
+      return next(createError(400, "Sport not found with id: " + sport_id));
     }
 
     note = sanitizeNote(note);
@@ -97,7 +109,14 @@ export async function validateNewSlot(req, res, next) {
       });
     }
 
-    req.slotData = { start_time, end_time, note, blocked, date };
+    req.slotData = {
+      start_time,
+      end_time,
+      note,
+      blocked,
+      date,
+      sport: sport[0]["name"],
+    };
     next();
   } catch (err) {
     next(err);
@@ -119,7 +138,7 @@ export async function validateUpdatedSlot(req, res, next) {
         .status(404)
         .json({ success: false, data: {}, error: "Slot not found" });
 
-    let { start_time, end_time, note, blocked, date } = req.body;
+    let { start_time, end_time, note, blocked, date, sport_id } = req.body;
 
     if (date) {
       if (!isValidDateString(date)) {
@@ -156,13 +175,23 @@ export async function validateUpdatedSlot(req, res, next) {
       .first();
 
     if (overlap) {
-      return res
-        .status(400)
-        .json({
-          success: false,
-          data: {},
-          error: "Updated slot overlaps with an existing booking",
-        });
+      return res.status(400).json({
+        success: false,
+        data: {},
+        error: "Updated slot overlaps with an existing booking",
+      });
+    }
+
+    if (!sport_id || typeof sport_id !== "string") {
+      return next(
+        createError(400, "sport_id is required and must be a string")
+      );
+    }
+
+    const sport = await db("sports").select("name").where("id", sport_id);
+
+    if (sport.length == 0) {
+      return next(createError(400, "Sport not found with id: " + sport_id));
     }
 
     req.slotData = {
@@ -171,6 +200,7 @@ export async function validateUpdatedSlot(req, res, next) {
       note: sanitizeNote(note) ?? existing.note,
       blocked: blocked ?? existing.blocked,
       date: newDate,
+      sport: sport[0]["name"],
     };
 
     req.existing = existing;

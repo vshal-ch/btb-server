@@ -9,7 +9,6 @@ router.put("/", authMiddleware, async (req, res, next) => {
   try {
     const { name, timings, gmaps_url, address, dimensions, is_open } = req.body;
 
-
     const safeData = { id:"venue-1" };
 
     if (name !== undefined) safeData.name = validator.escape(name);
