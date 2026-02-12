@@ -1,6 +1,9 @@
 import db from "../config/db.js";
 import validator from "validator";
 import createError from "http-errors";
+import getDateString from "../utils/dateFormatter.js";
+
+const ALLOWED_FILTERS = ["all", "future", "past", "attended"];
 
 // helper
 function validateTimes(start_time, end_time) {
@@ -39,21 +42,175 @@ function sanitizeNote(note) {
 
 export async function validateGet(req, res, next) {
   try {
-    let { current_time, date } = req.query;
-    if (!current_time) {
+    let { current_time, date, box } = req.query;
+    if (current_time && !validator.isNumeric(current_time)) {
       return res
         .status(400)
-        .json({ success: false, data: {}, error: "current_time is required" });
+        .json({ success: false, data: {}, error: "Invalid current time" });
     }
     if (!isValidDateString(date)) {
       return res
         .status(400)
         .json({ success: false, data: {}, error: "date is required" });
     }
+
+    if (!box || (box != "Box-1" && box != "Box-2")) {
+      return res
+        .status(400)
+        .json({ success: false, data: {}, error: "Invalid Box" });
+    }
     next();
   } catch (e) {
     next(e);
   }
+}
+
+export function validateBookingQuery(req, res, next) {
+  let { filter = "all", page = 1, limit = 10 } = req.query;
+
+  if (!ALLOWED_FILTERS.includes(filter)) {
+    throw new AppError("Invalid filter value", 400);
+  }
+
+  page = Number(page);
+  limit = Number(limit);
+
+  if (Number.isNaN(page) || page < 1) {
+    throw new AppError("Invalid page number", 400);
+  }
+
+  if (Number.isNaN(limit) || limit < 1 || limit > 20) {
+    throw new AppError("Invalid limit value", 400);
+  }
+
+  req.query.filter = filter;
+  req.query.page = page;
+  req.query.limit = limit;
+
+  next();
+}
+
+export async function validateSelectedSlotBody(req, res, next) {
+  const { date, box, sportId, startTime, endTime } = req.body;
+
+  if (
+    !date ||
+    !box ||
+    !sportId ||
+    startTime === undefined ||
+    endTime === undefined
+  ) {
+    return res.status(400).json({ error: "Missing required fields" });
+  }
+
+  const parsedDate = new Date(date);
+
+  if (isNaN(parsedDate.getTime())) {
+    return res.status(400).json({ error: "Invalid date format" });
+  }
+
+  if (typeof box !== "string" || box.trim().length === 0) {
+    return res.status(400).json({ error: "Box must be a non-empty string" });
+  }
+  // Simple escaping to prevent basic XSS/Injection
+  const sanitizedBox = box.replace(/[<>]/g, "");
+  if (sanitizedBox !== "Box-1" && sanitizedBox !== "Box-2") {
+    return res.status(400).json({ error: "Invalid box" });
+  }
+
+  if (!validator.isUUID(sportId)) {
+    return res.status(400).json({ error: "sportId must be a valid UUID" });
+  }
+
+  const isInvalidTime = (val) => !Number.isInteger(val) || val < 0 || val > 36;
+
+  if (isInvalidTime(startTime) || isInvalidTime(endTime)) {
+    return res
+      .status(400)
+      .json({ error: "Times must be integers between 0 and 36" });
+  }
+
+  if (startTime >= endTime) {
+    return res.status(400).json({ error: "startTime must be before endTime" });
+  }
+
+  if (endTime - startTime < 2) {
+    return res.status(400).json({ error: "Minimum booking time is 1 hour" });
+  }
+
+  req.body.box = sanitizedBox;
+
+  next();
+}
+
+export async function validateReschedule(req, res, next) {
+  const { bookingId, date, startTime, endTime } = req.body;
+  if (!date || !bookingId || startTime === undefined || endTime === undefined) {
+    return res.status(400).json({ error: "Missing required fields" });
+  }
+
+  const parsedDate = new Date(date);
+
+  if (isNaN(parsedDate.getTime())) {
+    return res.status(400).json({ error: "Invalid date format" });
+  }
+
+  if (!validator.isUUID(bookingId)) {
+    return res.status(400).json({ error: "bookingId must be a valid UUID" });
+  }
+
+  const isInvalidTime = (val) => !Number.isInteger(val) || val < 0 || val > 36;
+
+  if (isInvalidTime(startTime) || isInvalidTime(endTime)) {
+    return res
+      .status(400)
+      .json({ error: "Times must be integers between 0 and 36" });
+  }
+
+  if (startTime >= endTime) {
+    return res.status(400).json({ error: "startTime must be before endTime" });
+  }
+
+  if (endTime - startTime < 2) {
+    return res.status(400).json({ error: "Minimum booking time is 1 hour" });
+  }
+  next()
+}
+
+export async function checkForExisting(req, res, next) {
+  const { date, box, sportId, startTime, endTime } = req.body;
+  let dTemp = new Date(date);
+
+  const existing = await db("booked_slots")
+    .where({
+      user_id: req.user.id,
+      box,
+      date: getDateString(dTemp),
+      start_time: startTime,
+      end_time: endTime,
+      status: "LOCKED",
+    })
+    .andWhere("lock_expires_at", ">=", db.fn.now())
+    .first();
+
+  if (existing) {
+    console.log(
+      "A locked slot is available for this user, returning the same.",
+    );
+
+    const payment = await db("payments")
+      .where({ booking_id: existing.id })
+      .first();
+
+    return res.json({
+      booking_id: existing.id,
+      internal_order_id: payment.internal_order_id,
+      gateway_order_id: payment.gateway_order_id,
+      payment_session_id: payment.payment_session_id,
+      expires_at: existing.lock_expires_at,
+    });
+  }
+  next();
 }
 
 // Middleware for POST /slot
@@ -77,7 +234,7 @@ export async function validateNewSlot(req, res, next) {
 
     if (!sport_id || typeof sport_id !== "string") {
       return next(
-        createError(400, "sport_id is required and must be a string")
+        createError(400, "sport_id is required and must be a string"),
       );
     }
 
@@ -96,7 +253,7 @@ export async function validateNewSlot(req, res, next) {
         this.where("start_time", "<", end_time).andWhere(
           "end_time",
           ">",
-          start_time
+          start_time,
         );
       })
       .first();
@@ -169,7 +326,7 @@ export async function validateUpdatedSlot(req, res, next) {
         this.where("start_time", "<", newEnd).andWhere(
           "end_time",
           ">",
-          newStart
+          newStart,
         );
       })
       .first();
@@ -184,7 +341,7 @@ export async function validateUpdatedSlot(req, res, next) {
 
     if (!sport_id || typeof sport_id !== "string") {
       return next(
-        createError(400, "sport_id is required and must be a string")
+        createError(400, "sport_id is required and must be a string"),
       );
     }
 

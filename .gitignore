@@ -3,3 +3,7 @@ node_modules
 .clinic
 
 test.js
+platform_policy.js
+seeds/*
+seeds
+google-client.html

@@ -36,7 +36,7 @@ router.put(
     } catch (err) {
       next(err);
     }
-  }
+  },
 );
 
 router.delete(
@@ -50,7 +50,7 @@ router.delete(
     } catch (err) {
       next(err);
     }
-  }
+  },
 );
 
 function validateIdParam(req, res, next) {
@@ -62,7 +62,7 @@ function validateIdParam(req, res, next) {
 }
 
 function validateSport(req, res, next) {
-  const { sport } = req.body;
+  const { sport, box } = req.body;
 
   if (
     !sport ||
@@ -70,7 +70,16 @@ function validateSport(req, res, next) {
     !validator.isAlphanumeric(sport, undefined, { ignore: " " })
   ) {
     return next(
-      createError(400, "Sport is required and must be a Alphanumeric string")
+      createError(400, "Sport is required and must be a Alphanumeric string"),
+    );
+  }
+  if (
+    !box ||
+    typeof box !== "string" ||
+    !validator.isAlphanumeric(box, undefined, { ignore: " " })
+  ) {
+    return next(
+      createError(400, "Box is required and must be a Alphanumeric string"),
     );
   }
   next();

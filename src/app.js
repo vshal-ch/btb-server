@@ -7,12 +7,15 @@ import routes from "./routes/index.js";
 import { notFound, errorHandler } from "./middlewares/error.js";
 import path from "path";
 import { fileURLToPath } from "url";
+import { extractPlatform } from "./middlewares/validate.js";
+import cashfreeWebhook from "./webhooks/cashfree.js";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
 const app = express();
-
+app.use(morgan("dev"));
+app.use("/webhook", express.raw({ type: "*/*" }), cashfreeWebhook);
 app.use(helmet());
 app.use(
   cors({
@@ -29,9 +32,8 @@ app.use(
       "Pragma",
       "Expires",
     ],
-  })
+  }),
 );
-app.use(morgan("dev"));
 app.use(express.json({ limit: "1mb" }));
 app.use(cookieParser());
 app.use(express.urlencoded({ extended: true }));
@@ -39,7 +41,7 @@ app.use(express.urlencoded({ extended: true }));
 app.get("/privacy-policy", (req, res) => {
   res.sendFile(path.join(__dirname, "public", "privacy-policy.html"));
 });
-app.use("/api", routes);
+app.use("/api", extractPlatform, routes);
 
 app.use(notFound);
 app.use(errorHandler);

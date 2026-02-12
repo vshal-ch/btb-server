@@ -1,95 +1,132 @@
 import express from "express";
-import bcrypt from "bcrypt";
-import knex from "../config/db.js";
-import { generateAccessToken, generateRefreshToken } from "../utils/jwt.js";
-import { refreshMiddleware } from "../middlewares/auth.js";
+import {
+  loginWithGoogle,
+  logout,
+  logoutAll,
+  refreshSession,
+  updatePhone,
+} from "../services/auth.js";
+import { PLATFORM_POLICY } from "../config/platform_policy.js";
+import {
+  extractRefreshToken,
+  requireAccessToken,
+  validateProfileUpdate,
+} from "../middlewares/userAuth.middleware.js";
 
 const authRouter = express.Router();
 
-authRouter.post("/login", async (req, res) => {
+authRouter.post("/validate", requireAccessToken, async (req, res, next) => {
+  res.json({
+    success: true,
+    data: { ...req.user },
+  });
+});
+
+authRouter.post("/google", async (req, res, next) => {
   try {
     if (!req.body) {
       return res
         .status(400)
         .json({ success: false, error: "Invalid request body" });
     }
-    const { username, password } = req.body;
+    const { idToken } = req.body;
 
-    if (!username || !password) {
+    if (!idToken) {
       return res
         .status(400)
-        .json({ success: false, error: "Username and password are required" });
+        .json({ success: false, error: "ID token is required" });
     }
+    req.idToken = req.body.idToken;
+    const platform = req.platform;
+    const { accessToken, refreshToken, user } = await loginWithGoogle(req);
 
-    const user = await knex("admins").where({ username }).first();
-
-    if (!user) {
-      return res
-        .status(401)
-        .json({ success: false, error: "Invalid credentials" });
+    if (PLATFORM_POLICY[platform].refreshTokenSource === "cookie") {
+      res
+        .cookie("refreshToken", refreshToken, {
+          httpOnly: true,
+          sameSite: "strict",
+          secure: process.env.NODE_ENV === "development" ? false : true,
+          maxAge: 14 * 86400000,
+        })
+        .json({ success: true, data: { accessToken, user }, error: "" });
+    } else if (PLATFORM_POLICY[platform].refreshTokenSource === "json") {
+      res.json({
+        success: true,
+        data: { accessToken, refreshToken, user },
+        error: "",
+      });
     }
+  } catch (e) {
+    next(e);
+  }
+});
 
-    const match = await bcrypt.compare(password, user.password);
-    if (!match) {
-      return res
-        .status(401)
-        .json({ success: false, error: "Invalid credentials" });
+authRouter.post(
+  "/complete",
+  requireAccessToken,
+  validateProfileUpdate,
+  async (req, res, next) => {
+    try {
+      const user = req.user;
+      const { phone, name } = req;
+
+      const updatedUser = await updatePhone(user.id, { phone, name });
+
+      if (!updatedUser) {
+        return res.status(500).json({
+          success: false,
+          error: "Failed to update phone number",
+        });
+      }
+
+      return res.json({
+        success: true,
+        data: updatedUser,
+      });
+    } catch (err) {
+      next(err);
     }
+  },
+);
 
-    const accessToken = generateAccessToken({
-      id: user.id,
-      username: user.username,
-    });
-    const refreshToken = generateRefreshToken({
-      id: user.id,
-      username: user.username,
-    });
+authRouter.post("/refresh", extractRefreshToken, async (req, res, next) => {
+  try {
+    const result = await refreshSession(req, res);
+    console.log(result);
 
-    await knex("admin_refresh_tokens").where('admin_id',user.id).del();
-    await knex("admin_refresh_tokens").insert({
-      admin_id: user.id,
-      token: refreshToken,
-    });
+    res.json({ success: true, data: result });
+  } catch (e) {
+    console.log(e);
 
-    res
-      .cookie("refreshToken", refreshToken, {
+    next(e);
+  }
+});
+
+authRouter.post(
+  "/logout",
+  requireAccessToken,
+  extractRefreshToken,
+  async (req, res) => {
+    try {
+      await logout(req);
+      console.log("Deleted refresh token from db");
+
+      res.clearCookie("refresh_token", {
         httpOnly: true,
-        sameSite: "strict",
         secure: process.env.NODE_ENV == "development" ? false : true,
-        maxAge: 86400000,
-      })
-      .json({ success: true, error: "", data: { accessToken } });
-  } catch (err) {
-    console.error("Login error:", err);
-    res.status(500).json({ success: false, error: "Internal server error" });
-  }
-});
+        sameSite: "Strict",
+        maxAge: 14 * 86400000,
+      });
+      res.sendStatus(204);
+    } catch (e) {
+      next(e);
+    }
+  },
+);
 
-authRouter.post("/refresh", refreshMiddleware, async (req, res) => {
-  const newAccessToken = generateAccessToken({
-    id: req.user.id,
-    username: req.user.username,
-  });
-  res.json({ success: true, data: { accessToken: newAccessToken }, error: "" });
-});
-
-authRouter.post("/logout", async (req, res) => {
-  console.log(req.cookies);
-
-  const { refreshToken } = req.cookies;
-  if (!refreshToken) {
-    console.log("No refresh token");
-    return res.status(400).json({ error: "Refresh token required" });
-  }
-
-  await knex("admin_refresh_tokens").where({ token: refreshToken }).del();
-  res.clearCookie("refreshToken", {
-    httpOnly: true,
-    secure: process.env.NODE_ENV == "development" ? false : true,
-    sameSite: "Strict",
-    maxAge: 86400000,
-  });
-  res.sendStatus(204);
+authRouter.post("/logout-all", requireAccessToken, async (req, res) => {
+  await logoutAll(req);
+  res.json({ success: true });
 });
 
 export default authRouter;

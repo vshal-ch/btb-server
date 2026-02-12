@@ -6,9 +6,11 @@ import phoneRouter from "./phone.js";
 import mediaRouter from "./media.js";
 import costRouter from "./costs.js";
 import sportRouter from "./sports.js";
+import authRouter from "./auth.js";
  
 const router = Router();
 
+router.use("/auth",authRouter);
 router.use("/slots", slotsRouter);
 router.use("/venue", venueRouter);
 router.use("/contact", contactRouter);

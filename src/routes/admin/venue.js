@@ -7,15 +7,14 @@ const router = express.Router();
 
 router.put("/", authMiddleware, async (req, res, next) => {
   try {
-    const { name, timings, gmaps_url, address, dimensions, is_open } = req.body;
+    const { name, timings, gmaps_url, address, about, is_open } = req.body;
 
-    const safeData = { id:"venue-1" };
+    const safeData = { id: "venue-1" };
 
     if (name !== undefined) safeData.name = validator.escape(name);
     if (address !== undefined) safeData.address = validator.escape(address);
     if (timings !== undefined) safeData.timings = validator.escape(timings);
-    if (dimensions !== undefined)
-      safeData.dimensions = validator.escape(dimensions);
+    if (about !== undefined) safeData.about = validator.escape(about);
 
     if (gmaps_url !== undefined) {
       if (!isGoogleMapsUrl(gmaps_url)) {
