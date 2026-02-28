@@ -31,9 +31,6 @@ export async function processCashfreeEvent(payload, idempotencyKey) {
     .where({ gateway_order_id: gatewayOrderId })
     .orWhere({ internal_order_id: orderId })
     .first();
-  console.log("Payment from webhook");
-
-  console.log(payment);
 
   if (!payment) {
     return;

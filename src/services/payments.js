@@ -42,13 +42,14 @@ export async function handlePaymentSuccess(payment, data) {
       .where({ id: payment.booking_id })
       .update({
         status: "CONFIRMED",
+        last_updated_by_type: "system",
       })
       .returning("*");
   });
 
   if (booking.length == 0) return;
   let { box, date, start_time: startTime, end_time: endTime } = booking[0];
-  date = getDateString(date)
+  date = getDateString(date);
   await releaseSlotLock({ box, date, startTime, endTime });
 }
 
@@ -66,13 +67,14 @@ export async function handlePaymentFailure(payment, data) {
       .where({ id: payment.booking_id })
       .update({
         status: "EXPIRED",
+        last_updated_by_type: "system",
       })
       .returning("*");
   });
 
   if (booking.length == 0) return;
-  
+
   let { box, date, start_time: startTime, end_time: endTime } = booking[0];
-  date = getDateString(date)
+  date = getDateString(date);
   await releaseSlotLock({ box, date, startTime, endTime });
 }

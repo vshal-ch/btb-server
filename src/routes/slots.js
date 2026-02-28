@@ -97,9 +97,9 @@ router.post("/reschedule", validateReschedule, async (req, res, next) => {
     const result = await rescheduleSlot({
       bookingId,
       userId: req.user.id,
-      date,
-      startTime,
-      endTime,
+      newDate: date,
+      newStartTime:startTime,
+      newEndTime: endTime,
     });
     res.json({ success: true, data: result });
   } catch (e) {

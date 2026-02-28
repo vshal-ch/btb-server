@@ -36,7 +36,6 @@ export const loginWithGoogle = async (req) => {
 
   const payload = ticket.getPayload();
   const { sub, email, name, picture } = payload;
-  console.log(payload);
 
   return await knex.transaction(async (trx) => {
     let oauth = await trx("oauth_accounts")

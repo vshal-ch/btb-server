@@ -174,7 +174,7 @@ export async function validateReschedule(req, res, next) {
   if (endTime - startTime < 2) {
     return res.status(400).json({ error: "Minimum booking time is 1 hour" });
   }
-  next()
+  next();
 }
 
 export async function checkForExisting(req, res, next) {
@@ -216,63 +216,73 @@ export async function checkForExisting(req, res, next) {
 // Middleware for POST /slot
 export async function validateNewSlot(req, res, next) {
   try {
-    let { start_time, end_time, note, blocked, date, sport_id } = req.body;
+    let { start_time, end_time, note, status, date, sport_id, total_amount } =
+      req.body;
 
     if (!isValidDateString(date)) {
       return res
         .status(400)
         .json({ success: false, data: {}, error: "Invalid date" });
     }
+    const isInvalidTime = (val) =>
+      !Number.isInteger(val) || val < 0 || val > 36;
 
-    if (!validateTimes(start_time, end_time)) {
+    if (isInvalidTime(start_time) || isInvalidTime(end_time)) {
+      return res
+        .status(400)
+        .json({ error: "Times must be integers between 0 and 36" });
+    }
+
+    if (start_time >= end_time) {
+      return res
+        .status(400)
+        .json({ error: "start_time must be before end_time" });
+    }
+
+    if (end_time - start_time < 2) {
+      return res.status(400).json({ error: "Minimum booking time is 1 hour" });
+    }
+
+    if (total_amount && isNaN(total_amount)) {
       return res.status(400).json({
         success: false,
         data: {},
-        error: "Invalid start_time or end_time",
+        error: "Invalid amount paid",
       });
     }
 
+    if (status !== "CONFIRMED" && status !== "UNCONFIRMED") {
+      return res.status(400).json({
+        success: false,
+        data: {},
+        error: "Invalid status, only CONFIRMED & UNCONFIRMED are allowed.",
+      });
+    }
+    
     if (!sport_id || typeof sport_id !== "string") {
       return next(
         createError(400, "sport_id is required and must be a string"),
       );
     }
 
-    const sport = await db("sports").select("name").where("id", sport_id);
+    const sport = await db("sports")
+      .select("name", "box")
+      .where("id", sport_id);
     if (sport.length == 0) {
       return next(createError(400, "Sport not found with id: " + sport_id));
     }
 
     note = sanitizeNote(note);
 
-    // Check overlap
-    const overlap = await db("booked_slots")
-      .where("date", date)
-      .andWhere("blocked", true)
-      .andWhere(function () {
-        this.where("start_time", "<", end_time).andWhere(
-          "end_time",
-          ">",
-          start_time,
-        );
-      })
-      .first();
-
-    if (overlap) {
-      return res.status(400).json({
-        success: false,
-        data: {},
-        error: "Slot overlaps with an existing booking",
-      });
-    }
-
     req.slotData = {
       start_time,
       end_time,
       note,
-      blocked,
       date,
+      status,
+      total_amount,
       sport: sport[0]["name"],
+      box: sport[0]["box"],
     };
     next();
   } catch (err) {
@@ -295,7 +305,16 @@ export async function validateUpdatedSlot(req, res, next) {
         .status(404)
         .json({ success: false, data: {}, error: "Slot not found" });
 
-    let { start_time, end_time, note, blocked, date, sport_id } = req.body;
+    if (existing.created_by_type === "user") {
+      return res.status(404).json({
+        success: false,
+        data: {},
+        error: "Slot created by user cannot be modified.",
+      });
+    }
+
+    let { start_time, end_time, note, status, date, sport_id, total_amount } =
+      req.body;
 
     if (date) {
       if (!isValidDateString(date)) {
@@ -308,44 +327,78 @@ export async function validateUpdatedSlot(req, res, next) {
     const newStart = start_time ?? existing.start_time;
     const newEnd = end_time ?? existing.end_time;
     const newDate = date ?? existing.date;
+    total_amount = total_amount ?? existing.total_amount;
+    status = status ?? existing.status;
 
-    if (!validateTimes(newStart, newEnd)) {
+    const isInvalidTime = (val) =>
+      !Number.isInteger(val) || val < 0 || val > 36;
+
+    if (isInvalidTime(newStart) || isInvalidTime(newEnd)) {
+      return res
+        .status(400)
+        .json({ error: "Times must be integers between 0 and 36" });
+    }
+
+    if (newStart >= newEnd) {
+      return res
+        .status(400)
+        .json({ error: "Start time must be before newEnd" });
+    }
+
+    if (newEnd - newStart < 2) {
+      return res.status(400).json({ error: "Minimum booking time is 1 hour" });
+    }
+
+    if (total_amount && isNaN(total_amount)) {
       return res.status(400).json({
         success: false,
         data: {},
-        error: "Invalid start_time or end_time",
+        error: "Invalid amount paid",
       });
     }
 
+    if (status !== "CONFIRMED" && status !== "UNCONFIRMED") {
+      return res.status(400).json({
+        success: false,
+        data: {},
+        error: "Invalid status, only CONFIRMED & UNCONFIRMED are allowed.",
+      });
+    }
     // Check overlap (excluding self)
-    const overlap = await db("booked_slots")
-      .where("date", newDate)
-      .andWhere("blocked", true)
-      .andWhereNot("id", id)
-      .andWhere(function () {
-        this.where("start_time", "<", newEnd).andWhere(
-          "end_time",
-          ">",
-          newStart,
-        );
-      })
-      .first();
+    // const overlap = await db("booked_slots")
+    //   .where("date", newDate)
+    //   .andWhere("blocked", true)
+    //   .andWhereNot("id", id)
+    //   .andWhere(function () {
+    //     this.where("start_time", "<", newEnd).andWhere(
+    //       "end_time",
+    //       ">",
+    //       newStart,
+    //     );
+    //   })
+    //   .first();
 
-    if (overlap) {
-      return res.status(400).json({
-        success: false,
-        data: {},
-        error: "Updated slot overlaps with an existing booking",
-      });
-    }
-
+    // if (overlap) {
+    //   return res.status(400).json({
+    //     success: false,
+    //     data: {},
+    //     error: "Updated slot overlaps with an existing booking",
+    //   });
+    // }
     if (!sport_id || typeof sport_id !== "string") {
       return next(
         createError(400, "sport_id is required and must be a string"),
       );
     }
 
-    const sport = await db("sports").select("name").where("id", sport_id);
+    const sport = await db("sports")
+      .select("name", "box")
+      .where("id", sport_id);
+    if (sport.length == 0) {
+      return next(createError(400, "Sport not found with id: " + sport_id));
+    }
+
+    note = sanitizeNote(note);
 
     if (sport.length == 0) {
       return next(createError(400, "Sport not found with id: " + sport_id));
@@ -355,9 +408,11 @@ export async function validateUpdatedSlot(req, res, next) {
       start_time: newStart,
       end_time: newEnd,
       note: sanitizeNote(note) ?? existing.note,
-      blocked: blocked ?? existing.blocked,
       date: newDate,
+      total_amount,
+      status,
       sport: sport[0]["name"],
+      box: sport[0]["box"],
     };
 
     req.existing = existing;

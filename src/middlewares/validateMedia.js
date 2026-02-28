@@ -1,12 +1,28 @@
 import validator from "validator";
+import AppError from "../utils/AppError.js";
 
 export function validateMedia(req, res, next) {
-  const { type, description, position, youtube_url } = req.body;
+  const { category, title, type, description, active, position, youtube_url } =
+    req.body;
+
+  if (!["venue", "promo-banner"].includes(category)) {
+    return res
+      .status(400)
+      .json({ success: false, data: {}, error: "Invalid category" });
+  }
 
   if (!["image", "video"].includes(type)) {
     return res
       .status(400)
       .json({ success: false, data: {}, error: "Invalid media type" });
+  }
+
+  if (category === "promo-banner" && type === "video") {
+    throw new AppError("Only images can be uploaded as banners.", 400);
+  }
+
+  if (!title || !validator.isAscii(title) || title.length > 100) {
+    throw new AppError("Invalid title", 400);
   }
 
   if (position && !validator.isNumeric(position, { no_symbols: true })) {
@@ -20,7 +36,11 @@ export function validateMedia(req, res, next) {
       .status(400)
       .json({ success: false, data: {}, error: "Invalid description" });
   }
+  console.log(active);
 
+  if (!validator.isBoolean(active)) {
+    throw new AppError("Active is required", 400);
+  }
   if (type === "video") {
     if (!youtube_url)
       return res.status(400).json({

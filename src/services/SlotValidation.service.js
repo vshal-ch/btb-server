@@ -4,14 +4,15 @@ import { calculateCostBreakdown, getCostSportDetailBySport } from "./costs.js";
 import { applyOffers } from "./offer.service.js";
 import AppError from "../utils/AppError.js";
 import { getCheckoutNotes } from "./notes.js";
-import getDateString from "../utils/dateFormatter.js";
+import getDateString, { getDayOfWeekFromDate } from "../utils/dateFormatter.js";
+import { applyCharges } from "./charges.js";
 
 export async function validateSlot(req, withPolicies = true) {
   const { date, box, sportId, startTime, endTime } = req;
 
   // 1️⃣ Date validation
   let selectedDate = new Date(date);
-  
+
   const startOfToday = new Date().setHours(0, 0, 0, 0);
   if (selectedDate < startOfToday) {
     throw new AppError("Cannot book past date", 400);
@@ -27,6 +28,20 @@ export async function validateSlot(req, withPolicies = true) {
   if (!cost) throw new AppError("Invalid sport", 400);
   if (cost.box !== box)
     throw new AppError("Invalid box " + box + " for " + cost.sport, 400);
+
+  const monthly_slot_check = await db("monthly_slot_reservations")
+    .where("box", box)
+    .where("status", "active")
+    .where("start_date", "<=", date)
+    .where("end_date", ">=", date)
+    .andWhere((q) =>
+      q.where("start_time", "<", endTime).andWhere("end_time", ">", startTime),
+    )
+    .first();
+
+  if (monthly_slot_check) {
+    throw new AppError("Slot already booked", 400);
+  }
 
   // 2️⃣ DB collision (blocked/booked)
   const blocked = await db("booked_slots")
@@ -55,18 +70,22 @@ export async function validateSlot(req, withPolicies = true) {
     endTime,
     selectedDate,
   );
-
   // 6️⃣ Apply offers
-  const { finalTotal, offerBreakdown, appliedOffers } = await applyOffers(
-    baseBreakdown.total,
-    {
-      date: selectedDate,
-      sportId,
-      durationUnits: endTime - startTime,
-      startTime,
-      endTime,
-    },
-  );
+  const {
+    finalTotal: totalAfterOffer,
+    breakdown: offerBreakdown,
+    appliedOffers,
+  } = await applyOffers(baseBreakdown.total, {
+    date: selectedDate,
+    sport: cost.sport,
+    box,
+    durationUnits: endTime - startTime,
+    dayOfWeek: getDayOfWeekFromDate(selectedDate),
+    startTime,
+    endTime,
+  });
+
+  const { finalTotal, chargeBreakdown } = await applyCharges(totalAfterOffer);
 
   return {
     date: getDateString(selectedDate),
@@ -75,7 +94,7 @@ export async function validateSlot(req, withPolicies = true) {
     sport: cost.sport,
     box,
     total: finalTotal,
-    breakdown: [...baseBreakdown.items, ...offerBreakdown],
+    breakdown: [...baseBreakdown.items, ...offerBreakdown, ...chargeBreakdown],
     //   offersApplied: appliedOffers,
     policies: withPolicies ? await getCheckoutNotes() : [],
   };
