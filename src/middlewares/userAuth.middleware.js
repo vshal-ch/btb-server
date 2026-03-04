@@ -3,7 +3,6 @@ import { getUser } from "../services/auth.js";
 import { verifyToken } from "../utils/jwt.js";
 
 export const requireAccessToken = async (req, res, next) => {
-  
   const auth = req.headers.authorization;
   if (!auth?.startsWith("Bearer ")) {
     return res
@@ -18,10 +17,10 @@ export const requireAccessToken = async (req, res, next) => {
 
     if (!user) {
       throw new Error("Invalid access token");
-    } 
-    
+    }
+
     req.user = user;
-    
+
     next();
   } catch {
     return res
@@ -110,7 +109,6 @@ export const extractRefreshToken = (req, res, next) => {
     } else {
       refreshToken = req.body?.refreshToken;
     }
-
 
     if (!refreshToken) {
       return res.status(400).json({

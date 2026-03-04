@@ -68,7 +68,7 @@ router.delete("/:id", authMiddleware, async (req, res, next) => {
     const id = req.params.id;
     if (!id) return res.status(400).json({ error: "id is required" });
     const result = await mediaService.deleteMedia(id);
-    res.json({ success: true});
+    res.json({ success: true });
   } catch (err) {
     next(err);
   }

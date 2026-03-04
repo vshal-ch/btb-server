@@ -45,7 +45,7 @@ authRouter.post("/login", async (req, res) => {
       username: user.username,
     });
 
-    await knex("admin_refresh_tokens").where('admin_id',user.id).del();
+    await knex("admin_refresh_tokens").where("admin_id", user.id).del();
     await knex("admin_refresh_tokens").insert({
       admin_id: user.id,
       token: refreshToken,

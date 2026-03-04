@@ -9,4 +9,3 @@ export async function getFaqs(platform) {
     })
     .orderBy("display_order", "asc");
 }
-

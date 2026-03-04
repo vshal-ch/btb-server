@@ -24,7 +24,7 @@ export async function uploadToExternalServer(file, type) {
       (error, result) => {
         if (error) return reject(error);
         resolve(result.secure_url);
-      }
+      },
     );
 
     // Pipe buffer into Cloudinary stream

@@ -1,7 +1,5 @@
 import express from "express";
-import {
-  validateOffer,
-} from "../../middlewares/validateOffer.js";
+import { validateOffer } from "../../middlewares/validateOffer.js";
 import * as offerService from "../../services/offer.service.js";
 
 const router = express.Router();

@@ -25,16 +25,16 @@ export function validateCreateContact(req, res, next) {
       .status(400)
       .json({ success: false, data: {}, error: "Invalid email" });
   }
-//  if (!validatePhonesArray(phones)) {
-//    return res
-//      .status(400)
-//      .json({ success: false, data: {}, error: "Invalid phones array" });
-//  }
+  //  if (!validatePhonesArray(phones)) {
+  //    return res
+  //      .status(400)
+  //      .json({ success: false, data: {}, error: "Invalid phones array" });
+  //  }
 
   // sanitize
   req.body.name = validator.escape(name);
   req.body.email = email || null;
-//  req.body.phones = phones;
+  //  req.body.phones = phones;
   next();
 }
 

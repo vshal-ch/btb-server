@@ -1,5 +1,8 @@
 import { Router } from "express";
-import { getSlotSelectionNotes,getReschedulePolicies } from "../services/notes.js";
+import {
+  getSlotSelectionNotes,
+  getReschedulePolicies,
+} from "../services/notes.js";
 
 const router = Router();
 

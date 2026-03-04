@@ -333,6 +333,16 @@ export async function bookSlot(slotData, req) {
         amount: cfOrder.order_amount,
         status: "CREATED",
       });
+
+      if (slotData.breakdown.length > 0) {
+        await trx("booking_price_snapshots").insert({
+          booking_id: booking.id,
+          booking_group_id: booking.booking_group_id,
+          base_amount: slotData.breakdown[0].amount,
+          final_amount: booking.total_amount,
+          breakdown: JSON.stringify(slotData.breakdown),
+        });
+      }
     });
     return {
       booking_id: bookingRow.id,

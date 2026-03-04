@@ -3,7 +3,7 @@ import { getPaymentStatus } from "../services/payments.js";
 
 const router = express.Router();
 
-router.get("/verify/:orderId", async (req, res,next) => {
+router.get("/verify/:orderId", async (req, res, next) => {
   try {
     const { orderId } = req.params;
 

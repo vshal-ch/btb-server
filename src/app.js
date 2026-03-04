@@ -31,7 +31,7 @@ app.use(
       "Cache-Control",
       "Pragma",
       "Expires",
-      "x-platform"
+      "x-platform",
     ],
   }),
 );

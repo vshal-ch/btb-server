@@ -21,20 +21,25 @@ router.get("/", authMiddleware, async (req, res, next) => {
   }
 });
 
-router.post("/:contact_id", authMiddleware, validateUpdatePhone, async (req, res, next) => {
-  try {
-     const contact_id = req.params.contact_id
+router.post(
+  "/:contact_id",
+  authMiddleware,
+  validateUpdatePhone,
+  async (req, res, next) => {
+    try {
+      const contact_id = req.params.contact_id;
       if (!contact_id) {
-    return res
-      .status(400)
-      .json({ success: false, data: {}, error: "contact_id required" });
-  }
-    const phone = await phoneService.createPhone(req.body, contact_id);
-    res.json({ success: true, error: "", data: phone });
-  } catch (err) {
-    next(err);
-  }
-});
+        return res
+          .status(400)
+          .json({ success: false, data: {}, error: "contact_id required" });
+      }
+      const phone = await phoneService.createPhone(req.body, contact_id);
+      res.json({ success: true, error: "", data: phone });
+    } catch (err) {
+      next(err);
+    }
+  },
+);
 
 router.put(
   "/:id",
@@ -51,7 +56,7 @@ router.put(
     } catch (err) {
       next(err);
     }
-  }
+  },
 );
 
 router.delete("/:id", authMiddleware, async (req, res, next) => {

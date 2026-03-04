@@ -258,7 +258,7 @@ export async function validateNewSlot(req, res, next) {
         error: "Invalid status, only CONFIRMED & UNCONFIRMED are allowed.",
       });
     }
-    
+
     if (!sport_id || typeof sport_id !== "string") {
       return next(
         createError(400, "sport_id is required and must be a string"),

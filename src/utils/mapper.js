@@ -1,5 +1,4 @@
 export function convertRowIntoSlotDetail(row, admin) {
-
   return {
     slot: {
       id: row.id,

@@ -11,6 +11,7 @@
   "license": "ISC",
   "dependencies": {
     "@ngrok/ngrok": "^1.7.0",
+    "axios": "^1.13.6",
     "bcrypt": "^6.0.0",
     "cashfree-pg": "^5.1.0",
     "cloudinary": "^2.7.0",

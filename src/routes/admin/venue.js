@@ -47,7 +47,7 @@ router.put("/", authMiddleware, async (req, res, next) => {
       }
       safeData.is_open = is_open;
     }
-    
+
     const updated = await updateVenue(safeData, req.user.id);
     res.json({ success: true, data: updated, error: "" });
   } catch (err) {
