@@ -42,6 +42,7 @@ export const getVenueData = async () => {
   if (!venue) return null;
   const media = await db("media")
     .select("id", "type", "src_url", "description")
+    .where({ category: "venue", active: true })
     .orderBy("position", "asc");
   const sports = await db("sports").select("*");
 
