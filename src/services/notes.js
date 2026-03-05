@@ -15,7 +15,7 @@ export async function getReschedulePolicies() {
     .select("title", "note", "type")
     .where("title", "Reschedule Policy")
     .where("is_active", true)
-    .orderBy("priority", "asc");
+    .orderBy("priority", "desc");
 
   return rows;
 }

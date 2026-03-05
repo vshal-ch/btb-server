@@ -19,7 +19,7 @@ router.post(
     } catch (err) {
       next(err);
     }
-  }
+  },
 );
 
 router.put(
@@ -30,7 +30,7 @@ router.put(
     try {
       const updated = await contactService.updateContact(
         req.params.id,
-        req.body
+        req.body,
       );
       if (!updated)
         return res
@@ -40,13 +40,16 @@ router.put(
     } catch (err) {
       next(err);
     }
-  }
+  },
 );
 
 router.delete("/:id", authMiddleware, async (req, res, next) => {
   try {
     const deleted = await contactService.deleteContact(req.params.id);
-    if (!deleted) return res.status(404).json({ success: false, error: "Contact not found" });
+    if (!deleted)
+      return res
+        .status(404)
+        .json({ success: false, error: "Contact not found" });
     res.json({ success: true, error: "", data: deleted });
   } catch (err) {
     next(err);

@@ -14,16 +14,13 @@ const router = Router();
 //   }
 // });
 
-router.get("/:sport_id", validateSportIdParam,async (req, res, next) => {
+router.get("/:sport_id", validateSportIdParam, async (req, res, next) => {
   try {
     const cost = await costsService.getCostBySport(req.sport_id);
     res.json({ success: true, error: "", data: cost });
   } catch (err) {
-    
     next(err);
   }
 });
-
-
 
 export default router;

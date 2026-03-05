@@ -5,7 +5,7 @@ export async function getPhones(contact_id) {
   return knex("phones").where({ contact_id }).select("*");
 }
 
-export async function createPhone({ phone_no, type },contact_id) {
+export async function createPhone({ phone_no, type }, contact_id) {
   const id = crypto.randomUUID();
   const [inserted] = await knex("phones")
     .insert({ id, contact_id, phone_no, type })

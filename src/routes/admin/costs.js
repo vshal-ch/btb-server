@@ -56,7 +56,7 @@ router.put(
       }
       next(err);
     }
-  }
+  },
 );
 
 // DELETE cost
@@ -71,7 +71,7 @@ router.delete(
     } catch (err) {
       next(err);
     }
-  }
+  },
 );
 
 export default router;

@@ -6,10 +6,10 @@ export function notFound(_req, res, _next) {
 /** Centralized error handler */
 export function errorHandler(err, _req, res, _next) {
   console.error(err); // log once here; replace with winston in prod
+  let dbStatus, message;
+
   if (err.code && typeof err.code === "string" && err.code.length === 5) {
     const pgClass = err.code.substring(0, 2);
-
-    let dbStatus;
 
     switch (pgClass) {
       case "23":
@@ -46,13 +46,16 @@ export function errorHandler(err, _req, res, _next) {
         dbStatus = 500;
         message = "Database error";
     }
+  } else {
+    dbStatus = 500;
+    message = err.message;
   }
 
-  const respStatus = err.status || dbStatus ;
-
+  const respStatus = err.status || dbStatus;
+  message = message || "Internal Server Error";
   const payload = {
     success: false,
-    error: err.message || "Internal Server Error",
+    error: message,
     data: {},
   };
   if (process.env.NODE_ENV !== "production" && err.stack) {

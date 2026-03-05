@@ -3,6 +3,7 @@ import db from "../config/db.js";
 import AppError from "../utils/AppError.js";
 import { releaseSlotLock } from "../utils/redisClient.js";
 import getDateString from "../utils/dateFormatter.js";
+import { sendTelegramMessage } from "../utils/telegram.js";
 
 export async function getPaymentStatus(orderId) {
   const payment = await db("payments")
@@ -42,14 +43,17 @@ export async function handlePaymentSuccess(payment, data) {
       .where({ id: payment.booking_id })
       .update({
         status: "CONFIRMED",
+        last_updated_by_type: "system",
       })
       .returning("*");
   });
 
   if (booking.length == 0) return;
   let { box, date, start_time: startTime, end_time: endTime } = booking[0];
-  date = getDateString(date)
+  date = getDateString(date);
   await releaseSlotLock({ box, date, startTime, endTime });
+  const user = await db("users").where({ id: booking[0].user_id }).first();
+  sendTelegramMessage(booking[0], user);
 }
 
 export async function handlePaymentFailure(payment, data) {
@@ -66,13 +70,14 @@ export async function handlePaymentFailure(payment, data) {
       .where({ id: payment.booking_id })
       .update({
         status: "EXPIRED",
+        last_updated_by_type: "system",
       })
       .returning("*");
   });
 
   if (booking.length == 0) return;
-  
+
   let { box, date, start_time: startTime, end_time: endTime } = booking[0];
-  date = getDateString(date)
+  date = getDateString(date);
   await releaseSlotLock({ box, date, startTime, endTime });
 }

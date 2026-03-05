@@ -2,7 +2,9 @@ import { Cashfree, CFEnvironment } from "cashfree-pg";
 import AppError from "./AppError.js";
 
 const cashfree = new Cashfree(
-  process.env.CF_ENV === "production" ? CFEnvironment.PRODUCTION : CFEnvironment.SANDBOX,
+  process.env.CF_ENV === "production"
+    ? CFEnvironment.PRODUCTION
+    : CFEnvironment.SANDBOX,
   process.env.CF_APP_ID,
   process.env.CF_SECRET_KEY,
 );
@@ -15,7 +17,7 @@ export async function createCFOrder(request) {
     return response.data;
   } catch (e) {
     console.log(e);
-    
+
     throw new AppError(
       e.response.data.mesasge || "Cashfree error",
       e.response.statusCode || 500,

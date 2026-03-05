@@ -109,7 +109,6 @@ export async function deleteCost(id) {
 }
 
 export function calculateCostBreakdown(cost, start, end, date) {
-  
   const blocks = end - start;
   const items = [];
   let total = 0;

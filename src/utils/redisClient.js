@@ -121,7 +121,7 @@ export async function checkRedisLockedSlots({ box, date, startTime, endTime }) {
 
   for (let i = 0; i < results.length; i++) {
     if (results[i] !== null) {
-      throw new AppError(`Slot is already locked at the selected time!`,400);
+      throw new AppError(`Slot is already locked at the selected time!`, 400);
     }
   }
 }

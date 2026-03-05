@@ -4,14 +4,14 @@ import {
   getBookingById,
   getSlots,
   getUserBookings,
-  rescheduleSlot
+  rescheduleSlot,
 } from "../services/slots.js";
 import {
   checkForExisting,
   validateBookingQuery,
   validateGet,
   validateSelectedSlotBody,
-  validateReschedule
+  validateReschedule,
 } from "../middlewares/validateSlot.js";
 import { validateSlot } from "../services/SlotValidation.service.js";
 import AppError from "../utils/AppError.js";
@@ -82,8 +82,7 @@ router.post(
       const slotData = await validateSlot(req.body, false);
 
       const result = await bookSlot(slotData, req);
-      console.log(result);
-      
+
       return res.json({ success: true, error: "", data: result });
     } catch (e) {
       next(e);
@@ -97,9 +96,9 @@ router.post("/reschedule", validateReschedule, async (req, res, next) => {
     const result = await rescheduleSlot({
       bookingId,
       userId: req.user.id,
-      date,
-      startTime,
-      endTime,
+      newDate: date,
+      newStartTime: startTime,
+      newEndTime: endTime,
     });
     res.json({ success: true, data: result });
   } catch (e) {

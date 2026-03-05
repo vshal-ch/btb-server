@@ -21,7 +21,7 @@ export function validateSportIdParam(req, res, next) {
 // Cost validation
 export function validateCost(req, res, next) {
   const { evening_cost, weekend_cost, sport_id, cost } = req.body;
-  
+
   if (!sport_id || typeof sport_id !== "string") {
     return next(createError(400, "sport_id is required and must be a string"));
   }

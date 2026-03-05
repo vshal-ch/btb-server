@@ -6,12 +6,48 @@ import {
 } from "../utils/mediaUploader.js";
 
 export async function getAllMedia() {
-  return db("media").orderBy("position", "asc").select("*");
+  return db("media")
+    .orderBy("position", "asc")
+    .select(
+      "id",
+      "src_url",
+      "title",
+      "description",
+      "type",
+      "category",
+      "position",
+    );
+}
+
+export async function getMediaByCategory(category) {
+  return db("media")
+    .where({ category })
+    .orderBy("position", "asc")
+    .select(
+      "id",
+      "src_url",
+      "title",
+      "description",
+      "type",
+      "category",
+      "position",
+      "active",
+    );
 }
 
 export async function createMedia(
   file,
-  { type, description, position, youtube_url, src_url }
+  {
+    category,
+    title,
+    type,
+    description,
+    active,
+    position,
+    youtube_url,
+    src_url,
+  },
+  adminId,
 ) {
   let finalSrcUrl;
   if (type === "image") {
@@ -32,8 +68,28 @@ export async function createMedia(
 
   const id = crypto.randomUUID();
   const [inserted] = await db("media")
-    .insert({ id, src_url: finalSrcUrl, type, description, position })
-    .returning("*");
+    .insert({
+      id,
+      src_url: finalSrcUrl,
+      category,
+      title,
+      type,
+      description,
+      position,
+      active,
+      created_by_type: "admin",
+      created_by_id: adminId,
+    })
+    .returning([
+      "id",
+      "src_url",
+      "title",
+      "description",
+      "type",
+      "category",
+      "position",
+      "active",
+    ]);
 
   return inserted;
 }
@@ -41,7 +97,17 @@ export async function createMedia(
 export async function updateMedia(
   id,
   file,
-  { type, description, position, youtube_url, src_url }
+  {
+    category,
+    title,
+    type,
+    description,
+    active,
+    position,
+    youtube_url,
+    src_url,
+  },
+  adminId,
 ) {
   const existing = await db("media").where({ id }).first();
   if (!existing) throw new Error("Media not found");
@@ -74,7 +140,17 @@ export async function updateMedia(
 
   const [updated] = await db("media")
     .where({ id })
-    .update({ src_url: finalSrcUrl, type, description, position })
+    .update({
+      src_url: finalSrcUrl,
+      category,
+      title,
+      type,
+      description,
+      position,
+      active,
+      last_updated_by_type: "admin",
+      last_updated_by_id: adminId,
+    })
     .returning("*");
 
   return updated;
@@ -84,7 +160,7 @@ export async function deleteMedia(id) {
   const existing = await db("media").where({ id }).first();
   if (!existing) throw new Error("Media not found");
   if (existing.type === "image" && existing.src_url) {
-    await deleteFromExternalServer(existing.src_url, "image");
+    deleteFromExternalServer(existing.src_url, "image");
   }
   await db("media").where({ id }).del();
 

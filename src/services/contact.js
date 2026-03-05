@@ -3,13 +3,13 @@ import knex from "../config/db.js";
 
 export async function getContacts() {
   return knex("contacts as c")
-  .leftJoin("phones as p", "c.id", "p.contact_id")
-  .select(
-    "c.id",
-    "c.name",
-    "c.email",
-    knex.raw(
-      `COALESCE(
+    .leftJoin("phones as p", "c.id", "p.contact_id")
+    .select(
+      "c.id",
+      "c.name",
+      "c.email",
+      knex.raw(
+        `COALESCE(
         json_agg(
           json_build_object(
             'id', p.id,
@@ -19,10 +19,10 @@ export async function getContacts() {
           )
         ) FILTER (WHERE p.id IS NOT NULL),
         '[]'
-      ) as phones`
+      ) as phones`,
+      ),
     )
-  )
-  .groupBy("c.id", "c.name", "c.email");
+    .groupBy("c.id", "c.name", "c.email");
 }
 
 export async function createContact({ name, email }) {
@@ -32,19 +32,19 @@ export async function createContact({ name, email }) {
       .insert({ id: contact_id, name, email })
       .returning("*");
 
-//    const insertedPhones = [];
-//    for (const ph of phones) {
-//      const phone_id = crypto.randomUUID();
-//      const [phone] = await trx("phones")
-//        .insert({
-//          id: phone_id,
-//          phone_no: ph.phone_no,
-//          type: ph.type,
-//          contact_id: contact.id,
-//        })
-//        .returning("*");
-//      insertedPhones.push(phone);
-//    }
+    //    const insertedPhones = [];
+    //    for (const ph of phones) {
+    //      const phone_id = crypto.randomUUID();
+    //      const [phone] = await trx("phones")
+    //        .insert({
+    //          id: phone_id,
+    //          phone_no: ph.phone_no,
+    //          type: ph.type,
+    //          contact_id: contact.id,
+    //        })
+    //        .returning("*");
+    //      insertedPhones.push(phone);
+    //    }
 
     return { ...contact };
   });

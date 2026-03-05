@@ -1,9 +1,23 @@
 import express from "express";
 import { authMiddleware } from "../../middlewares/auth.js";
-import { getVenueData, updateVenue } from "../../services/venue.js";
+import { getVenue, getVenueData, updateVenue } from "../../services/venue.js";
 import validator from "validator";
 
 const router = express.Router();
+
+router.get("/", authMiddleware, async (req, res, next) => {
+  try {
+    const venue = await getVenue();
+    if (!venue) {
+      return res
+        .status(404)
+        .json({ success: false, error: "Venue not found", data: {} });
+    }
+    res.json({ success: true, error: "", data: venue });
+  } catch (err) {
+    next(err);
+  }
+});
 
 router.put("/", authMiddleware, async (req, res, next) => {
   try {
@@ -34,7 +48,7 @@ router.put("/", authMiddleware, async (req, res, next) => {
       safeData.is_open = is_open;
     }
 
-    const updated = await updateVenue(safeData);
+    const updated = await updateVenue(safeData, req.user.id);
     res.json({ success: true, data: updated, error: "" });
   } catch (err) {
     next(err);

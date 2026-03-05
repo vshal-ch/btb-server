@@ -92,12 +92,9 @@ authRouter.post(
 authRouter.post("/refresh", extractRefreshToken, async (req, res, next) => {
   try {
     const result = await refreshSession(req, res);
-    console.log(result);
 
     res.json({ success: true, data: result });
   } catch (e) {
-    console.log(e);
-
     next(e);
   }
 });

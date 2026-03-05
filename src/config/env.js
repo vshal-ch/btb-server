@@ -1,4 +1,6 @@
-require("dotenv").config();
+import env from "dotenv";
+
+env.config();
 
 const required = ["JWT_SECRET", "JWT_REFRESH_SECRET", "NODE_ENV", "PORT"];
 
@@ -9,8 +11,10 @@ for (const key of required) {
   }
 }
 
-module.exports = {
+const vars = {
   jwtSecret: process.env.JWT_SECRET,
   nodeEnv: process.env.NODE_ENV || "development",
   port: process.env.PORT || 3000,
 };
+
+export default vars;
