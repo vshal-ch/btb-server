@@ -99,7 +99,7 @@ router.post("/reschedule", validateReschedule, async (req, res, next) => {
       newDate: date,
       newStartTime: startTime,
       newEndTime: endTime,
-    });
+    },req.user);
     res.json({ success: true, data: result });
   } catch (e) {
     next(e);
