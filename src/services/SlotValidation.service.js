@@ -6,19 +6,25 @@ import AppError from "../utils/AppError.js";
 import { getCheckoutNotes } from "./notes.js";
 import getDateString, { getDayOfWeekFromDate } from "../utils/dateFormatter.js";
 import { applyCharges } from "./charges.js";
+import { PAST_BOOKING_WINDOW_MIN } from "../utils/constants.js";
 
 export async function validateSlot(req, withPolicies = true) {
   const { date, box, sportId, startTime, endTime } = req;
 
   // 1️⃣ Date validation
   let selectedDate = new Date(date);
+  let selectedDateStart = new Date(date).setHours(0, 0, 0, 0);
 
   const startOfToday = new Date().setHours(0, 0, 0, 0);
-  if (selectedDate < startOfToday) {
+  if (selectedDateStart < startOfToday) {
     throw new AppError("Cannot book past date", 400);
   }
-  if (selectedDate == startOfToday) {
-    if ((startTime + 12) * 30 < getCurrentMinutes()) {
+
+  if (selectedDateStart == startOfToday) {
+    if (
+      (startTime + 12) * 30 <
+      getCurrentMinutes() - PAST_BOOKING_WINDOW_MIN
+    ) {
       throw new AppError("Cannot book past time", 400);
     }
   }

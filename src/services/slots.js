@@ -12,6 +12,7 @@ import redis, {
 import { calculateCostBreakdown, getCostBySport } from "./costs.js";
 import { getVenuePolicies } from "./notes.js";
 import { convertRowIntoSlotDetail } from "../utils/mapper.js";
+import { sendRescheduleTelegramMessage } from "../utils/telegram.js";
 
 export async function getBookingById(booking_id, user_id) {
   const booking = await db("booked_slots")
@@ -385,16 +386,14 @@ export async function bookSlot(slotData, req) {
   }
 }
 
-export async function rescheduleSlot({
-  bookingId,
-  userId,
-  newDate,
-  newStartTime,
-  newEndTime,
-}) {
+export async function rescheduleSlot(
+  { bookingId, userId, newDate, newStartTime, newEndTime },
+  user,
+) {
   return db.transaction(async (trx) => {
     const original = await trx("booked_slots")
       .where({ id: bookingId, user_id: userId, status: "CONFIRMED" })
+      .whereNull("rescheduled_from_id")
       .forUpdate()
       .first();
 
@@ -526,6 +525,8 @@ export async function rescheduleSlot({
         booking_group_id: original.booking_group_id,
       })
       .returning("*");
+
+    sendRescheduleTelegramMessage(original, newBooking, user);
 
     return newBooking.id;
   });

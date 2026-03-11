@@ -28,13 +28,13 @@ export async function applyCharges(baseTotal) {
       label:
         `${charge.title}` +
         (charge.charge_type === "PERCENT" ? ` (${charge.charge_value}%)` : ""),
-      amount: Math.round(amount),
+      amount: Math.round(amount * 100) / 100,
     });
   }
 
   return {
-    finalTotal: Math.round(state.runningTotal),
-    totalCharge: Math.round(state.totalCharge),
+    finalTotal: Math.round(state.runningTotal * 100) / 100,
+    totalCharge: Math.round(state.totalCharge * 100) / 100,
     chargeBreakdown: state.breakdown,
   };
 }

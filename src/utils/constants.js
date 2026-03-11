@@ -1,0 +1,1 @@
+export const PAST_BOOKING_WINDOW_MIN = 15;

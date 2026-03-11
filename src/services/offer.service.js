@@ -307,7 +307,7 @@ function applyStackable(baseTotal, offers) {
       label: `${offer.title}${
         offer.discount_type === "PERCENT" ? ` (${offer.discount_value}%)` : ""
       }`,
-      amount: -Math.round(discount),
+      amount: -(Math.round(discount * 100) / 100),
     });
 
     state.appliedOffers.push(offer.title);
@@ -337,7 +337,7 @@ function getBestNonStackable(baseTotal, offers) {
         breakdown: [
           {
             label: offer.title,
-            amount: -Math.round(discount),
+            amount: -(Math.round(discount * 100) / 100),
           },
         ],
         appliedOffers: [offer.title],
@@ -411,8 +411,8 @@ function evaluateCondition(ctxValue, operator, value) {
 
 function finalizeResult(state) {
   return {
-    finalTotal: Math.round(state.runningTotal),
-    discountTotal: Math.round(state.totalDiscount),
+    finalTotal: Math.round(state.runningTotal * 100) / 100,
+    discountTotal: Math.round(state.totalDiscount * 100) / 100,
     breakdown: state.breakdown,
     appliedOffers: state.appliedOffers,
   };
