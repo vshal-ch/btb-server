@@ -1,3 +1,4 @@
+import { isHoliday } from "../cache/holidays.js";
 import knex from "../config/db.js";
 import createError from "http-errors";
 
@@ -133,6 +134,10 @@ export function calculateCostBreakdown(cost, start, end, date) {
     const weekend = (blocks * cost.weekend_cost) / 2;
     total += weekend;
     items.push({ label: "Weekend surcharge", amount: weekend });
+  } else if (isHoliday(date)) {
+    const holiday = (blocks * cost.weekend_cost) / 2;
+    total += holiday;
+    items.push({ label: "Holiday surcharge", amount: holiday });
   }
 
   return { total, items };

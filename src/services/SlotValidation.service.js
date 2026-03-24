@@ -70,7 +70,7 @@ export async function validateSlot(req, withPolicies = true) {
   });
 
   // 5️⃣ Base + surcharge breakdown
-  const baseBreakdown = await calculateCostBreakdown(
+  const baseBreakdown = calculateCostBreakdown(
     cost,
     startTime,
     endTime,

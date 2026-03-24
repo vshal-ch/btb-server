@@ -15,7 +15,7 @@ export function errorHandler(err, _req, res, _next) {
       case "23":
         // Integrity constraint violation
         dbStatus = 400;
-        message = "Invalid request data";
+        message = "Data already exists or invalid request data";
         break;
 
       case "22":
