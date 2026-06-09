@@ -114,7 +114,8 @@ export function calculateCostBreakdown(cost, start, end, date) {
   const items = [];
   let total = 0;
 
-  const base = (blocks * cost.cost) / 2;
+  //blocks are in units of 30 mins, cost.cost is rupees per hour 
+  const base = blocks * cost.cost / 2;
   total += base;
   items.push({ label: "Base price", amount: base });
 
