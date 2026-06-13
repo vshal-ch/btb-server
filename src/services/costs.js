@@ -110,36 +110,46 @@ export async function deleteCost(id) {
 }
 
 export function calculateCostBreakdown(cost, start, end, date) {
-  const blocks = end - start;
+  const units = end - start;
   const items = [];
   let total = 0;
+  let costPerUnit = cost.cost / 2;
+  let unitDistribution = { daytime: 0, evening: 0 };
+  let evnCostPerUnit = cost.evening_cost / 2;
 
-  //blocks are in units of 30 mins, cost.cost is rupees per hour 
-  const base = blocks * cost.cost / 2;
+  //units are number of 30 mins, cost.cost is rupees per hour
+  const base = units * costPerUnit;
   total += base;
   items.push({ label: "Base price", amount: base });
 
   // Evening surcharge
   if (start >= 24) {
-    const evening = (blocks * cost.evening_cost) / 2;
+    const evening = units * evnCostPerUnit;
     total += evening;
     items.push({ label: "Evening surcharge", amount: evening });
+    unitDistribution.evening = units;
   } else if (end > 24) {
-    const evening = ((end - 24) * cost.evening_cost) / 2;
+    const noOfEvnUnits = end - 24;
+    const evening = noOfEvnUnits * evnCostPerUnit;
     total += evening;
     items.push({ label: "Evening surcharge", amount: evening });
+    unitDistribution.evening = noOfEvnUnits;
   }
+
+  unitDistribution.daytime = units - unitDistribution.evening;
 
   // Weekend surcharge
-  if (date.getDay() == 6 || date.getDay() == 0) {
-    const weekend = (blocks * cost.weekend_cost) / 2;
-    total += weekend;
-    items.push({ label: "Weekend surcharge", amount: weekend });
-  } else if (isHoliday(date)) {
-    const holiday = (blocks * cost.weekend_cost) / 2;
-    total += holiday;
-    items.push({ label: "Holiday surcharge", amount: holiday });
+  const weekendCostPerUnit = cost.weekend_cost / 2;
+  if (date.getDay() == 6 || date.getDay() == 0 || isHoliday(date)) {
+    const amount = units * weekendCostPerUnit;
+    total += amount;
+    const label =
+      date.getDay() == 6 || date.getDay() == 0
+        ? "Weekend surcharge"
+        : "Holiday surcharge";
+    items.push({ label, amount });
+    costPerUnit += weekendCostPerUnit;
   }
 
-  return { total, items };
+  return { unitDistribution, costPerUnit, evnCostPerUnit, total, items };
 }
