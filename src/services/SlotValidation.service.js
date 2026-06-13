@@ -21,10 +21,7 @@ export async function validateSlot(req, withPolicies = true) {
   }
 
   if (selectedDateStart == startOfToday) {
-    if (
-      (startTime + 12) * 30 <
-      getCurrentMinutes() - PAST_BOOKING_WINDOW_MIN
-    ) {
+    if ((startTime + 12) * 30 < getCurrentMinutes() - PAST_BOOKING_WINDOW_MIN) {
       throw new AppError("Cannot book past time", 400);
     }
   }
@@ -89,6 +86,7 @@ export async function validateSlot(req, withPolicies = true) {
     dayOfWeek: getDayOfWeekFromDate(selectedDate),
     startTime,
     endTime,
+    ...baseBreakdown,
   });
 
   const { finalTotal, chargeBreakdown } = await applyCharges(totalAfterOffer);

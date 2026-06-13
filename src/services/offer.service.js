@@ -270,15 +270,35 @@ function groupOffers(rows) {
 
 //   return true;
 // }
+function getAmountForDuration(duration, ctx) {
+  let finalAmount = 0;
+  let { daytime, evening } = ctx.unitDistribution;
+  while (duration--) {
+    if (daytime > 0) {
+      finalAmount += ctx.costPerUnit;
+      daytime--;
+    } else if (evening > 0) {
+      finalAmount += ctx.costPerUnit + ctx.evnCostPerUnit;
+    }
+  }
+  return finalAmount;
+}
 
-function calculateDiscount(offer, state) {
+function calculateDiscount(offer, state, ctx) {
   const amountToApplyOn =
     offer.apply_on === "BASE" ? state.baseTotal : state.runningTotal;
 
-  let discount =
-    offer.discount_type === "PERCENT"
-      ? (amountToApplyOn * offer.discount_value) / 100
-      : Number(offer.discount_value);
+  let discount;
+  switch (offer.discount_type) {
+    case "PERCENT":
+      discount = (amountToApplyOn * offer.discount_value) / 100;
+      break;
+    case "FREE_DURATION":
+      discount = getAmountForDuration(Number(offer.discount_value), ctx);
+      break;
+    default:
+      discount = Number(offer.discount_value);
+  }
 
   // Apply max cap
   if (offer.max_discount_amount && discount > offer.max_discount_amount) {
@@ -316,7 +336,7 @@ function applyStackable(baseTotal, offers) {
   return state;
 }
 
-function getBestNonStackable(baseTotal, offers) {
+function getBestNonStackable(baseTotal, offers, ctx) {
   let best = null;
 
   for (const offer of offers) {
@@ -326,7 +346,7 @@ function getBestNonStackable(baseTotal, offers) {
       totalDiscount: 0,
     };
 
-    const discount = calculateDiscount(offer, state);
+    const discount = calculateDiscount(offer, state, ctx);
     const finalTotal = baseTotal - discount;
 
     if (!best || discount > best.totalDiscount) {
@@ -365,7 +385,7 @@ function conditionsMatch(offer, ctx) {
 function getContextValue(type, ctx) {
   switch (type) {
     case "MIN_DURATION":
-      return ctx.durationUnits * 30;
+      return ctx.durationUnits;
     case "SPORT":
       return ctx.sport;
     case "BOX":
@@ -435,7 +455,7 @@ export async function applyOffers(baseTotal, ctx) {
   const nonStackable = eligible.filter((o) => !o.is_stackable);
 
   const stackedResult = applyStackable(baseTotal, stackable);
-  const bestSingle = getBestNonStackable(baseTotal, nonStackable);
+  const bestSingle = getBestNonStackable(baseTotal, nonStackable, ctx);
 
   if (!bestSingle) {
     let res = finalizeResult(stackedResult);

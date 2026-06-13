@@ -79,7 +79,7 @@ export const validateOffer = (req, res, next) => {
   const normalizedActiveUntil = new Date(active_until);
   const normalizedMaxDiscountAmount = max_discount_amount
     ? Number(max_discount_amount)
-    : max_discount_amount;
+    : null;
 
   /* ===============================
      BUSINESS LOGIC VALIDATIONS
