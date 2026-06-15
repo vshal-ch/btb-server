@@ -69,7 +69,7 @@ export async function handlePaymentFailure(payment, data) {
     booking = await trx("booked_slots")
       .where({ id: payment.booking_id })
       .update({
-        status: "EXPIRED",
+        status: "FAILED",
         last_updated_by_type: "system",
       })
       .returning("*");

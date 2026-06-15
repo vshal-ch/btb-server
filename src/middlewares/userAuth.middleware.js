@@ -77,10 +77,25 @@ export const validateProfileUpdate = (req, res, next) => {
 
     const trimmed = name.trim();
 
-    if (trimmed.length < 1) {
+    if (trimmed.length < 2) {
       return res.status(400).json({
         success: false,
-        error: "Name must be at least 1 character long",
+        error: "Name must be at least 2 character long",
+      });
+    }
+
+    if (trimmed.length > 50) {
+      return res.status(400).json({
+        success: false,
+        error: "Name must not exceed 50 characters",
+      });
+    }
+    const allowedCharacters = /^[a-zA-Z0-9. ]*$/;
+    if (!allowedCharacters.test(trimmed)) {
+      return res.status(400).json({
+        success: false,
+        error:
+          "Only letters, numbers, spaces, and periods are allowed in Name input.",
       });
     }
 

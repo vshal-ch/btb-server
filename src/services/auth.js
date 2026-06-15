@@ -7,6 +7,7 @@ import {
 } from "../utils/jwt.js";
 import { OAuth2Client } from "google-auth-library";
 import { logAuthEvent } from "./authLog.js";
+import AppError from "../utils/AppError.js";
 
 const googleClient = new OAuth2Client();
 
@@ -192,4 +193,14 @@ export const logoutAll = async (req) => {
     platform: req.platform,
     req: req,
   });
+};
+
+export const deleteAccount = async (req) => {
+  const { id } = req.user;
+
+  const deletedCount = await knex("users").where({ id }).del();
+
+  if (deletedCount === 0) {
+    throw new AppError("User not found!", 404);
+  }
 };
