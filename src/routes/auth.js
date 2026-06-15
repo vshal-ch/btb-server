@@ -1,5 +1,6 @@
 import express from "express";
 import {
+  deleteAccount,
   loginWithGoogle,
   logout,
   logoutAll,
@@ -103,10 +104,9 @@ authRouter.post(
   "/logout",
   requireAccessToken,
   extractRefreshToken,
-  async (req, res) => {
+  async (req, res, next) => {
     try {
       await logout(req);
-      console.log("Deleted refresh token from db");
 
       res.clearCookie("refresh_token", {
         httpOnly: true,
@@ -125,5 +125,32 @@ authRouter.post("/logout-all", requireAccessToken, async (req, res) => {
   await logoutAll(req);
   res.json({ success: true });
 });
+
+authRouter.delete(
+  "/me",
+  requireAccessToken,
+  extractRefreshToken,
+  async (req, res, next) => {
+    try {
+      await deleteAccount(req);
+
+      console.log("Account of " + req.user.email + " is deleted.");
+
+      res.clearCookie("refresh_token", {
+        httpOnly: true,
+        secure: process.env.NODE_ENV == "development" ? false : true,
+        sameSite: "Strict",
+        maxAge: 14 * 86400000,
+      });
+
+      return res.status(200).json({
+        success: true,
+        data: "Account deleted successfully",
+      });
+    } catch (e) {
+      next(e);
+    }
+  },
+);
 
 export default authRouter;

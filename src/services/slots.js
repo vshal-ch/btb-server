@@ -304,6 +304,7 @@ export async function bookSlot(slotData, req) {
           created_by_type: "user",
           created_by_id: req.user.id,
           booking_group_id: tempBookingId,
+          customer_name: req.user.name,
         })
         .returning("*");
 
