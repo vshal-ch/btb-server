@@ -12,6 +12,7 @@ import amenitiesRouter from "./amenities.js";
 import offersRouter from "./offers.js";
 import chargesRouter from "./charges.js";
 import holidaysRouter from "./holidays.js";
+import notesRouter from "./notes.js";
 import { authMiddleware } from "../../middlewares/auth.js";
 
 const router = Router();
@@ -29,6 +30,7 @@ router.use("/amenities", authMiddleware, amenitiesRouter);
 router.use("/offers", authMiddleware, offersRouter);
 router.use("/charges", authMiddleware, chargesRouter);
 router.use("/holidays", authMiddleware, holidaysRouter);
+router.use("/notes", authMiddleware, notesRouter);
 
 // TODO: mount domain routes here (slots, venue, contacts, phones, media, costs)
 // router.use('/slots', slotsRoutes);
