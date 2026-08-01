@@ -393,7 +393,9 @@ function getContextValue(type, ctx) {
     case "DAY_OF_WEEK":
       return ctx.dayOfWeek;
     case "TIME_RANGE":
-      return ctx.startTime; // handled specially
+      return ctx.startTime;
+    case "END_TIME":
+      return ctx.endTime;
     default:
       return null;
   }
